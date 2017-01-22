@@ -7,7 +7,8 @@ Created on Sat Jan 21 12:05:46 2017
 
 import numpy as np
 from sklearn.datasets import load_iris
-from knn.k_nearest import KNearestNeighbors
+import knn
+#from knn import distance
 
 iris = load_iris()
 print('Iris target names:', iris.target_names)
@@ -28,7 +29,7 @@ print(X.shape)
         
 ## code goes here!
 for k in range(1, 10):
-    clfk = KNearestNeighbors(k=k)
+    clfk = knn.k_nearest.KNearestNeighbors(k=k,metric = knn.distance.LInfinityDistance)
     clfk.fit(train_data, train_labels)
     preds = clfk.predict(test_data)
     
