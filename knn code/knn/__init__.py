@@ -6,6 +6,7 @@ Created on Sat Jan 21 12:03:26 2017
 """
 
 
-from knn import *
-from k_nearest import KNearestNeighbors
+from . import k_nearest
+from . import distance
+#from k_nearest import KNearestNeighbors
     
