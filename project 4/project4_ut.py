@@ -38,6 +38,8 @@ def rmsle(actual, predicted):
     return rmsle
     
 
+
+## Actual problem training starts here
 path = 'C:/Users/romulo/Documents/GitHub/uc_berkeley_ml/project 4/'
 t_file = 'train.csv'
 test_file = 'test.csv'
@@ -87,26 +89,23 @@ ada = AdaBoostRegressor()
 forest = RandomForestRegressor(n_estimators = 1000)
 
 m1 = ada.fit(train_data,train_labels)
-f1 = forest.fit(train_data,train_labels)
-
 r = m1.predict(test_data)
-f_r = f1.predict(test_data)
-print('Accuracy (adaboost with decision trees):', m1.score(test_data, test_labels))
-print('Accuracy (random forest):', f1.score(test_data, test_labels))
-
 t_l = np.array(test_labels['count'])
 r_l = (np.array(r)).astype('int')
 ev =  rmsle(t_l,r_l)
-print(ev)
 
+print('Accuracy (adaboost with decision trees):', m1.score(test_data, test_labels))
+print('RMSLE for adaboost',ev)
+
+f1 = forest.fit(train_data,train_labels)
+f_r = f1.predict(test_data)
 fr_l = (np.array(f_r)).astype('int')
 ef =  rmsle(t_l,fr_l)
-print(ef)
+print('Accuracy (random forest):', f1.score(test_data, test_labels))
+print('RMSLE with random forest:', ef)
 
 
-#compare = test_labels
-#compare['predicted'] = r
-
+### Prepare for submission
 test_raw_data = pd.read_csv(path+test_file)
 test_raw_data [['weekday','hr','yr','month','time']]  = test_raw_data .apply(lambda x: convert_time(x['datetime']),axis=1)
 for col in cat_cols:
