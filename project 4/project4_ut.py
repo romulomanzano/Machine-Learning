@@ -47,15 +47,23 @@ path = 'C:/Users/romulo/Documents/GitHub/uc_berkeley_ml/project 4/'
 t_file = 'train.csv'
 test_file = 'test.csv'
 
+
+def time_on_market(x,begining):
+    return (x-begining).days // 7
+
+
 def convert_time(x):
     t = dt.datetime.strptime(x,"%m/%d/%Y %H:%M")
-    return pd.Series([t.weekday(),t.hour,t.year,t.month])
+    return pd.Series([t.weekday(),t.hour,t.year,t.month,t])
 
 
 target_columns = ['count','registered','casual']
 regress = ['count']
 regress_registered = ['registered']
 regress_casual = ['casual']
+binarize_cols = ['weather','season']
+
+
 
 raw_data = pd.read_csv(path+t_file)
 labels = raw_data[regress]
@@ -63,14 +71,26 @@ labels_registered = raw_data[regress_registered]
 labels_casual = raw_data[regress_casual]
 
 data = raw_data.drop(target_columns,axis=1)
-data[['weekday','hr','yr','month']]  = data.apply(lambda x: convert_time(x['datetime']),axis=1)
+data[['weekday','hr','yr','month','time']]  = data.apply(lambda x: convert_time(x['datetime']),axis=1)
 
+market_launch = min(data['time'])
+data['time_on_market']  = data.apply(lambda x: time_on_market(x['time'],market_launch),axis=1)
+data['morning_rush'] = ((data['hr']>=7)  & (data['hr']<=9 ) & (data['workingday']==1 ) ) *1
+data['evening_rush'] = ((data['hr']>=16)  & (data['hr']<=19 ) & (data['workingday']==1 )) *1
+data['sleep_time'] = (((data['hr']>=22)  | (data['hr']<=5 )) & (data['workingday']==1 )) *1
+data['weekend_rush'] = ((data['hr']>=11)  | (data['hr']<=18 ) & (data['weekday']>=5 )) *1
 
-cat_cols = ['season','holiday','workingday','weekday','hr','yr','month']
-binarize_cols = ['season','weather']#,'yr']
 
 data.drop('datetime',axis=1,inplace = True)
+data.drop('time',axis=1,inplace = True)
+data.drop('yr',axis=1,inplace = True)
+#data.drop('month',axis=1,inplace = True)
+#data.drop('season',axis=1,inplace = True)
+
+
 #data.drop('time',axis=1,inplace = True)
+#data.drop('time',axis=1,inplace = True)
+
 
 ## binarizing?
 data = pd.get_dummies(data,columns = binarize_cols )
@@ -96,6 +116,10 @@ print('Accuracy (random forest):', f1.score(test_data, test_labels))
 print('RMSLE with random forest:', ef)
 
 
+imp = f1.feature_importances_
+
+
+
 #Extra trees
 ex1 = extraTree.fit(train_data,train_labels)
 ex_r = ex1.predict(test_data)
@@ -115,19 +139,22 @@ train_labels_casual, test_labels_casual = labels_casual[:6000], labels_casual[60
 
 data_comp = raw_data.drop(regress,axis=1)
 labels_comp = raw_data[regress]
-data_comp[['weekday','hr','yr','month']]  = data_comp.apply(lambda x: convert_time(x['datetime']),axis=1)
+data_comp[['weekday','hr','yr','month','time']]  = data_comp.apply(lambda x: convert_time(x['datetime']),axis=1)
+data_comp['time_on_market']  = data_comp.apply(lambda x: time_on_market(x['time'],market_launch),axis=1)
+data_comp['morning_rush'] = ((data_comp['hr']>=7)  & (data_comp['hr']<=9 ) & (data_comp['workingday']==1 ) ) *1
+data_comp['evening_rush'] = ((data_comp['hr']>=16)  & (data_comp['hr']<=19 ) & (data_comp['workingday']==1 )) *1
+data_comp['sleep_time'] = (((data_comp['hr']>=22)  | (data_comp['hr']<=5 )) & (data_comp['workingday']==1 )) *1
+data_comp['weekend_rush'] = ((data_comp['hr']>=11)  | (data_comp['hr']<=18 ) & (data_comp['weekday']>=5 )) *1
 
 
-cat_cols = ['season','holiday','workingday','weekday','hr','yr','month']
+
 
 
 data_comp.drop('datetime',axis=1,inplace = True)
-#data_comp.drop('time',axis=1,inplace = True)
+data_comp.drop('time',axis=1,inplace = True)
+data_comp.drop('yr',axis=1,inplace = True)
+#data_comp.drop('season',axis=1,inplace = True)
 
-#print(data.dtypes)
-for col in cat_cols:
-    data_comp[col] = data_comp[col].astype('category')
-#print(data.dtypes)
 
 ## binarizing?
 data_comp = pd.get_dummies(data_comp,columns = binarize_cols)
@@ -170,18 +197,37 @@ print('RMSLE with random forest composite and full avg:', ef_avg)
 ### Prepare for submission
 
 submit_raw_data = pd.read_csv(path+test_file)
-submit_raw_data [['weekday','hr','yr','month','time']]  = submit_raw_data .apply(lambda x: convert_time(x['datetime']),axis=1)
-for col in cat_cols:
-    submit_raw_data[col] = submit_raw_data[col].astype('category')
+submit_raw_data[['weekday','hr','yr','month','time']]  = submit_raw_data .apply(lambda x: convert_time(x['datetime']),axis=1)
+submit_raw_data['time_on_market']  = submit_raw_data.apply(lambda x: time_on_market(x['time'],market_launch),axis=1)
+submit_raw_data['morning_rush'] = ((submit_raw_data['hr']>=7)  & (submit_raw_data['hr']<=9 ) & (submit_raw_data['workingday']==1 ) ) *1
+submit_raw_data['evening_rush'] = ((submit_raw_data['hr']>=16)  & (submit_raw_data['hr']<=19 ) & (submit_raw_data['workingday']==1 )) *1
+submit_raw_data['sleep_time'] = (((submit_raw_data['hr']>=22)  | (submit_raw_data['hr']<=5 )) & (submit_raw_data['workingday']==1 )) *1
+submit_raw_data['weekend_rush'] = ((submit_raw_data['hr']>=11)  | (submit_raw_data['hr']<=18 ) & (submit_raw_data['weekday']>=5 )) *1
+
     
 submit_result = (submit_raw_data['datetime']).to_frame()
 submit_result_full = (submit_raw_data['datetime']).to_frame()
+submit_result_avg = (submit_raw_data['datetime']).to_frame()
 
 submit_raw_data.drop('datetime',axis=1,inplace = True)
 submit_raw_data.drop('time',axis=1,inplace = True)
+submit_raw_data.drop('yr',axis=1,inplace = True)
 
-submit_raw_data = pd.get_dummies(submit_raw_data,columns = ['season','weather','yr'])
+submit_raw_data = pd.get_dummies(submit_raw_data,columns = binarize_cols)
 
+
+#Retrain with all data!
+'''
+full_data_comp = data_comp
+f1 = forest.fit(full_data_comp,labels_comp)
+#reg
+labels_reg = raw_data[regress_registered]
+f1_registered = forest_reg.fit(full_data_comp,labels_reg)
+#cas
+labels_cas = raw_data[regress_casual]
+f1_casual = forest_cas.fit(full_data_comp,labels_cas)
+#submission
+'''
 
 submit_registered = f1_registered.predict(submit_raw_data)
 submit_casual = f1_casual.predict(submit_raw_data)
@@ -195,4 +241,11 @@ submit_result['count'] = submit_composite_l
 submit_full = f1.predict(submit_raw_data)
 submit_full_l = (np.array(submit_full)).astype('int')
 submit_result_full['count'] = submit_full_l
+
+#averages
+submit_avg = (submit_full_l + submit_composite_l )/2
+submit_avg_l = (np.array(submit_avg)).astype('int')
+submit_result_avg['count'] = submit_avg_l
+
+
 
