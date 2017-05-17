@@ -13,9 +13,11 @@ import plotly.plotly as py
 import plotly.graph_objs as go
 from plotly.offline import plot as plot_off
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.cross_validation import train_test_split
+from sklearn.cross_validation import train_test_split, KFold
 from sklearn.svm import SVR
-from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.ensemble import ExtraTreesRegressor, GradientBoostingRegressor
+from sklearn.cross_validation import cross_val_score,cross_val_predict
+
 
 
 
@@ -40,6 +42,14 @@ def rmsle(actual, predicted):
     rmsle = np.sqrt(msle)
     return rmsle
     
+
+def model_scorer(model,X,Y):
+    results = model.predict(X)
+    results_np = (np.array(results)).astype('int')
+    labels_np = np.array(Y['count'])
+    score =  rmsle(labels_np,results_np)
+    return score
+
 
 
 ## Actual problem training starts here
@@ -118,6 +128,19 @@ print('RMSLE with random forest:', ef)
 
 imp = f1.feature_importances_
 
+#cross validation
+kf = KFold(n=data.shape[0], n_folds= 5,shuffle = True,random_state = 42)
+forest_cross = RandomForestRegressor(n_estimators = 1000,n_jobs = -1)
+print(cross_val_score(forest_cross,data,labels,cv = kf ,scoring = model_scorer))
+
+
+gb_cross = GradientBoostingRegressor(n_estimators=1000, learning_rate=0.1,random_state=42, loss='ls')
+print(cross_val_score(forest_cross,data,labels,cv = kf ,scoring = model_scorer,n_jobs = -1))
+
+
+
+
+
 
 
 #Extra trees
@@ -176,6 +199,8 @@ test_data_comp.drop(regress_casual,axis=1,inplace=True)
 f1_registered = forest_reg.fit(train_data_comp,train_labels_reg)
 f_r_registered = f1_registered.predict(test_data_comp)
 
+
+depth = [estimator.tree_.max_depth for estimator in f1_registered.estimators_]
 
 f1_casual = forest_cas.fit(train_data_comp,train_labels_cas)
 f_r_casual = f1_casual.predict(test_data_comp)
