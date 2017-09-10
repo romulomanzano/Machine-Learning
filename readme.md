@@ -1,5 +1,3 @@
-**Some thoughts...**
-
 ![](https://eugene-kaspersky-wpengine.netdna-ssl.com/files/2016/09/machine-learning-robots-dilbert.gif)
 
 **About what's in this repo:**
